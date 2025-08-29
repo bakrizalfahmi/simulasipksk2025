@@ -62,20 +62,24 @@
                 </div>
             </div>
             
-            <div id="indicator-container" class="flex flex-wrap gap-1.5 justify-center p-3 bg-gray-100 rounded-lg mb-6">
-                <!-- Indicator buttons will be generated here -->
+            <div class="sticky top-0 bg-white z-10 py-4 -mt-2">
+                <div id="indicator-container" class="flex flex-wrap gap-1.5 justify-center p-3 bg-gray-100 rounded-lg">
+                    <!-- Indicator buttons will be generated here -->
+                </div>
+                <p class="text-xs text-center text-gray-500 mt-2">Nota: Klik pada nombor untuk terus ke soalan tersebut.</p>
             </div>
 
-            <div id="questions-page-container">
+
+            <div id="questions-page-container" class="mt-6">
                 <!-- 10 questions will be displayed here -->
             </div>
             
             <div id="pagination-container" class="flex justify-between items-center mt-8">
                  <button id="prev-page-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 transition-transform transform hover:scale-105">
-                    ‹ Halaman Sebelum
+                    ‹ Kembali
                 </button>
                  <button id="next-page-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
-                    Halaman Seterusnya ›
+                    Seterusnya ›
                 </button>
                 <button id="finish-section-btn" class="hidden bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105">
                     Selesai Bahagian
@@ -616,6 +620,7 @@
     </script>
 </body>
 </html>
+
 
 
 
