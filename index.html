@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Ujian PKSK 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .option-label {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-label.selected {
+            background-color: #3b82f6; /* bg-blue-500 */
+            color: white;
+            border-color: #2563eb;
+        }
+        .indicator-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .indicator-btn.answered {
+            background-color: #22c55e; /* bg-green-500 */
+            color: white;
+            border-color: #16a34a;
+        }
+        .question-block {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 1.5rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen p-2 md:p-4">
+
+    <div id="app-container" class="w-full max-w-5xl bg-white rounded-2xl shadow-xl p-6 md:p-10 transition-all duration-500">
+
+        <!-- Skrin Nama -->
+        <div id="name-screen" class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-600 mb-4">Selamat Datang ke Ujian Simulasi PKSK 2025</h1>
+            <p class="text-gray-600 mb-8">Sila masukkan nama anda untuk memulakan ujian.</p>
+            <div class="max-w-md mx-auto">
+                <input type="text" id="name-input" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg text-center focus:border-blue-500 focus:ring-blue-500" placeholder="NAMA PENUH ANDA">
+                <button id="start-btn" class="w-full mt-4 bg-blue-600 text-white font-bold py-3 px-12 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300 disabled:bg-gray-400" disabled>
+                    Mulakan Ujian
+                </button>
+            </div>
+        </div>
+
+
+        <!-- Skrin Kuiz -->
+        <div id="quiz-screen" class="hidden">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                <div>
+                    <h2 id="section-title" class="text-2xl font-bold text-gray-700"></h2>
+                    <p id="page-counter" class="text-sm text-gray-500"></p>
+                </div>
+                <div id="timer" class="text-2xl font-bold bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hidden self-end md:self-center">
+                    <span id="time">90:00</span>
+                </div>
+            </div>
+            
+            <div id="indicator-container" class="flex flex-wrap gap-1.5 justify-center p-3 bg-gray-100 rounded-lg mb-6">
+                <!-- Indicator buttons will be generated here -->
+            </div>
+
+            <div id="questions-page-container">
+                <!-- 10 questions will be displayed here -->
+            </div>
+            
+            <div id="pagination-container" class="flex justify-between items-center mt-8">
+                 <button id="prev-page-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-400 transition-transform transform hover:scale-105">
+                    ‹ Halaman Sebelum
+                </button>
+                 <button id="next-page-btn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                    Halaman Seterusnya ›
+                </button>
+                <button id="finish-section-btn" class="hidden bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-transform transform hover:scale-105">
+                    Selesai Bahagian
+                </button>
+            </div>
+        </div>
+        
+        <!-- Skrin Keputusan -->
+        <div id="result-screen" class="hidden text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-600 mb-2">Ujian Selesai!</h1>
+            <p id="result-name" class="text-xl text-gray-700 font-semibold mb-6"></p>
+
+            <div class="grid md:grid-cols-2 gap-6 text-left my-8">
+                 <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg flex flex-col justify-center">
+                    <h2 class="text-xl font-bold text-blue-800 mb-2">Analisis Bahagian A</h2>
+                    <p id="result-a-feedback" class="text-gray-700">Terima kasih kerana melengkapkan Bahagian A. Jawapan anda memberikan gambaran awal tentang keperibadian anda.</p>
+                </div>
+                 <div class="bg-green-50 border border-green-200 p-6 rounded-lg text-center">
+                    <h2 class="text-xl font-bold text-green-800 mb-2">Skor Bahagian B</h2>
+                    <p class="text-5xl font-bold my-3" id="result-b-score">0/70</p>
+                    <p class="text-gray-600">Jawapan Betul</p>
+                </div>
+            </div>
+            
+            <button id="restart-btn" class="bg-blue-600 text-white font-bold py-3 px-12 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300">
+                Cuba Lagi
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- BANK SOALAN --- //
+        const questionBank = {
+             A: {
+                EQ: [
+                    // Set 1 (Sedia Ada)
+                    { q: "Anda telah belajar bersungguh-sungguh, tetapi keputusan peperiksaan anda masih tidak memuaskan. Apakah tindakan anda?", o: ["Menganalisis kelemahan & berjumpa guru", "Menyalahkan guru kerana tidak pandai mengajar", "Berputus asa dan tidak mahu belajar lagi", "Menganggap peperiksaan tidak penting"] },
+                    { q: "Anda berasa sangat rindu akan keluarga semasa minggu pertama di asrama. Apa yang anda lakukan?", o: ["Menghubungi keluarga & melibatkan diri dalam aktiviti", "Menangis sendirian di dalam bilik", "Meminta ibu bapa membawa anda pulang", "Membuat masalah supaya dapat pulang"] },
+                    { q: "Tugasan yang diberikan oleh guru sangat sukar dan anda hampir berputus asa. Apakah fikiran yang sepatutnya ada pada diri anda?", o: ["Menganggapnya sebagai cabaran & mencari bantuan", "Tidak membuat tugasan itu langsung", "Meniru tugasan rakan tanpa bertanya", "Memberi alasan kepada guru"] },
+                    { q: "Adik anda secara tidak sengaja merosakkan barang kesayangan anda. Bagaimana reaksi anda?", o: ["Bertenang dan menasihatinya dengan baik", "Memarahinya dengan kuat", "Membalas dengan merosakkan barangnya", "Mengadu kepada ibu bapa supaya dia dihukum"] },
+                    { q: "Anda menerima kritikan yang pedas daripada seorang rakan mengenai hasil kerja anda. Apakah tindakan anda?", o: ["Mendengar dengan fikiran terbuka & mengambilnya sebagai pengajaran", "Membalas kritikan dengan lebih pedas", "Berdendam dan tidak mahu berkawan dengannya lagi", "Mengabaikan kritikan itu sepenuhnya"] },
+                    { q: "Anda berasa tertekan dengan jadual harian yang padat di sekolah. Bagaimana anda menguruskannya?", o: ["Menyusun jadual seimbang & memastikan rehat cukup", "Ponteng aktiviti yang tidak disukai", "Tidur lewat setiap hari untuk siapkan kerja", "Merungut tentang jadual yang padat"] },
+                    { q: "Pasukan anda kalah dalam satu pertandingan sukan penting. Apakah yang anda katakan kepada rakan sepasukan?", o: ["Memberi semangat & menghargai usaha semua", "Menyalahkan rakan yang membuat kesilapan", "Meninggalkan pasukan serta-merta", "Tidak bercakap dengan sesiapa kerana terlalu kecewa"] },
+                    { q: "Anda dipilih untuk mengetuai satu projek besar di sekolah tetapi anda kurang yakin. Apakah tindakan anda?", o: ["Menerima sebagai peluang & membentuk pasukan yang kuat", "Menolak jawatan itu serta-merta", "Menerima tetapi menyuruh orang lain membuat semua kerja", "Melaksanakan projek seorang diri tanpa keyakinan"] },
+                    { q: "Anda berasa cemburu melihat rakan anda sentiasa dipuji oleh guru. Bagaimana anda mengawal perasaan itu?", o: ["Menjadikan kejayaannya sebagai inspirasi", "Mencari kesalahan rakan itu", "Menjauhkan diri daripadanya", "Meminta guru memuji anda juga"] },
+                    { q: "Anda berasa letih dan tidak bermotivasi untuk belajar. Apakah yang anda akan lakukan?", o: ["Mengambil rehat seketika & melakukan aktiviti ringan", "Terus tidur dan tidak belajar langsung", "Memaksa diri belajar walaupun tidak fokus", "Bermain permainan video sehingga lewat malam"] },
+                    // Set 2 (Baharu)
+                    { q: "Anda telah belajar bersungguh-sungguh, tetapi keputusan peperiksaan anda masih tidak memuaskan. Apakah tindakan anda?", o: ["Menganalisis semula kelemahan diri, berjumpa guru untuk mendapatkan nasihat, dan berusaha lebih gigih untuk peperiksaan seterusnya.", "Menyalahkan guru.", "Berputus asa.", "Tidak peduli."] },
+                    { q: "Anda berasa sangat rindu akan keluarga semasa minggu pertama di asrama. Apa yang anda lakukan?", o: ["Menghubungi ibu bapa untuk melepaskan rindu, dan pada masa yang sama cuba melibatkan diri dalam aktiviti asrama untuk menyesuaikan diri.", "Menangis sepanjang hari.", "Meminta untuk pulang.", "Mengasingkan diri."] },
+                    { q: "Tugasan yang diberikan oleh guru sangat sukar dan anda hampir berputus asa. Apakah fikiran yang sepatutnya ada pada diri anda?", o: ["Menganggap tugasan ini sebagai satu cabaran untuk menguji keupayaan diri dan mencari bantuan daripada guru atau rakan.", "Tidak mahu membuat tugasan.", "Meniru kerja rakan.", "Memberi alasan tidak sihat."] },
+                    { q: "Adik anda secara tidak sengaja merosakkan barang kesayangan anda. Bagaimana reaksi anda?", o: ["Bertenang, menasihati adik dengan baik supaya lebih berhati-hati pada masa akan datang, dan memaklumkan kepada ibu bapa.", "Memarahinya.", "Membalas perbuatannya.", "Mengadu kepada ibu bapa agar dia dihukum."] },
+                    { q: "Anda menerima kritikan yang pedas daripada seorang rakan mengenai hasil kerja anda. Apakah tindakan anda?", o: ["Mendengar kritikan itu dengan fikiran terbuka, menilainya secara objektif, dan mengambilnya sebagai satu pengajaran untuk penambahbaikan.", "Membalas kritikannya.", "Tidak berkawan dengannya lagi.", "Mengabaikannya."] },
+                    { q: "Anda berasa tertekan dengan jadual harian yang padat di sekolah. Bagaimana anda menguruskannya?", o: ["Menyusun jadual belajar yang seimbang, memastikan masa rehat yang cukup, dan melakukan aktiviti riadah untuk mengurangkan tekanan.", "Mengabaikan sebahagian jadual.", "Tidak tidur untuk siapkan semua kerja.", "Sentiasa merungut."] },
+                    { q: "Pasukan anda kalah dalam satu pertandingan sukan penting. Apakah yang anda katakan kepada rakan sepasukan?", o: ["Memberi kata-kata semangat, menghargai usaha semua ahli pasukan, dan berbincang tentang bagaimana untuk menjadi lebih baik pada masa hadapan.", "Menyalahkan rakan sepasukan.", "Keluar dari pasukan.", "Mendiamkan diri."] },
+                    { q: "Anda dipilih untuk mengetuai satu projek besar di sekolah tetapi anda kurang yakin dengan kebolehan diri. Apakah tindakan anda?", o: ["Menerima tanggungjawab itu sebagai peluang untuk belajar dan membuktikan kebolehan, serta membentuk pasukan yang kuat untuk bekerjasama.", "Menolak tanggungjawab tersebut.", "Memberi tugasan kepada orang lain.", "Melakukannya secara sambil lewa."] },
+                    { q: "Anda berasa cemburu melihat rakan anda sentiasa dipuji oleh guru. Bagaimana anda mengawal perasaan itu?", o: ["Menjadikan kejayaan rakan itu sebagai sumber inspirasi untuk berusaha lebih kuat dan fokus pada peningkatan prestasi diri sendiri.", "Mencari-cari kesalahannya.", "Menjauhinya.", "Meminta guru memuji anda juga."] },
+                    { q: "Anda berasa letih dan tidak bermotivasi untuk belajar. Apakah yang anda akan lakukan?", o: ["Mengambil rehat seketika, melakukan senaman ringan, atau mencari bahan bacaan yang menarik untuk mengembalikan semula semangat belajar.", "Terus tidur.", "Memaksa diri.", "Bermain sehingga lupa waktu."] }
+                ],
+                SSQ: [
+                    // Set 1 (Sedia Ada)
+                    { q: "Dua orang rakan baik anda sedang bertelagah. Apakah peranan anda?", o: ["Mendengar kedua-dua belah pihak & cuba mendamaikan", "Menyebelahi rakan yang lebih rapat", "Menghasut mereka untuk terus bergaduh", "Tidak mengambil peduli langsung"] },
+                    { q: "Anda baru berpindah ke asrama dan melihat seorang rakan sebilik sering menyendiri. Bagaimana anda mendekatinya?", o: ["Memulakan perbualan & mengajaknya beraktiviti bersama", "Membiarkannya kerana mungkin dia sombong", "Mengumpat tentangnya dengan rakan lain", "Menyuruh ketua asrama menukarkannya ke bilik lain"] },
+                    { q: "Dalam satu perbincangan kumpulan, idea anda tidak diterima oleh ahli lain. Apakah reaksi anda?", o: ["Mendengar pandangan lain & berbincang secara rasional", "Menarik diri daripada perbincangan", "Memaksa mereka menerima idea anda", "Memperlekehkan idea ahli lain"] },
+                    { q: "Seorang rakan dari luar negara menghadapi kesukaran berkomunikasi dalam Bahasa Melayu. Bagaimana anda boleh membantunya?", o: ["Meluangkan masa mengajarnya asas Bahasa Melayu", "Mentertawakannya kerana tidak pandai berbahasa", "Mengelak daripada bercakap dengannya", "Hanya bercakap dalam Bahasa Inggeris dengannya"] },
+                    { q: "Anda dilantik sebagai ketua kelas. Keadaan kelas menjadi bising semasa ketiadaan guru. Apakah tindakan anda?", o: ["Menenangkan rakan & mengingatkan mereka dengan sopan", "Turut serta membuat bising", "Menjerit dan memarahi semua orang", "Mencatat nama murid bising dan mengugut mereka"] },
+                    { q: "Anda melihat seorang pelajar junior dibuli oleh pelajar senior. Apakah yang akan anda lakukan?", o: ["Melaporkan kejadian itu dengan segera kepada guru", "Berpura-pura tidak nampak", "Menyertai mereka membuli pelajar itu", "Menasihati pembuli itu seorang diri"] },
+                    { q: "Rakan-rakan anda tidak berminat untuk mendengar ceramah. Apakah tindakan anda?", o: ["Menasihati mereka tentang manfaat ceramah & menunjukkan contoh baik", "Ikut mereka berbual di belakang dewan", "Melaporkan nama mereka kepada guru", "Membiarkan sahaja tingkah laku mereka"] },
+                    { q: "Anda bertemu dengan penjaga asrama buat kali pertama. Apakah yang patut anda lakukan?", o: ["Memperkenalkan diri dengan sopan dan bersalaman", "Membuat tidak endah dan terus berjalan", "Menunggunya menegur anda dahulu", "Bertanya soalan yang tidak berkaitan"] },
+                    { q: "Rakan media sosial mengajak anda berjumpa secara bersendirian. Apakah respons anda?", o: ["Menolak dengan baik & memaklumkan kepada ibu bapa", "Bersetuju untuk berjumpa tanpa ragu-ragu", "Pergi berjumpa dengan membawa rakan secara senyap", "Tidak membalas mesejnya"] },
+                    { q: "Anda diminta bekerjasama dengan seorang rakan yang tidak anda sukai. Bagaimana anda mengendalikannya?", o: ["Bersikap profesional & fokus pada tugasan", "Meminta guru menukar ahli kumpulan", "Melakukan semua kerja sendirian tanpa melibatkannya", "Sengaja mensabotaj hasil kerja kumpulan"] },
+                    // Set 2 (Baharu)
+                    { q: "Dua orang rakan baik anda sedang bertelagah dan tidak bertegur sapa. Apakah peranan anda?", o: ["Mendengar masalah daripada kedua-dua belah pihak dan cuba menjadi orang tengah untuk membantu mereka berdamai.", "Memihak kepada salah seorang.", "Membiarkan mereka.", "Menyalahkan kedua-duanya."] },
+                    { q: "Anda baru berpindah ke asrama dan melihat seorang rakan sebilik sering menyendiri. Bagaimana anda mendekatinya?", o: ["Memulakan perbualan dengan ramah, mengajaknya untuk makan atau beriadah bersama, dan memperkenalkannya kepada rakan-rakan lain.", "Membiarkannya bersendirian.", "Memberitahu warden.", "Mengusiknya."] },
+                    { q: "Dalam satu perbincangan kumpulan, idea anda tidak diterima oleh ahli lain. Apakah reaksi anda?", o: ["Mendengar pandangan ahli lain dengan hati terbuka dan berbincang secara rasional untuk mencapai kata sepakat yang terbaik untuk kumpulan.", "Merajuk dan mendiamkan diri.", "Memaksa mereka menerima idea anda.", "Mengkritik idea orang lain."] },
+                    { q: "Seorang rakan dari luar negara yang baru berpindah ke sekolah anda menghadapi kesukaran untuk berkomunikasi dalam Bahasa Melayu. Bagaimana anda boleh membantunya?", o: ["Meluangkan masa untuk mengajarnya asas Bahasa Melayu dan menggalakkan rakan-rakan lain untuk berkomunikasi dengannya secara perlahan-lahan.", "Mengelak daripadanya.", "Bercakap dalam Bahasa Inggeris sahaja.", "Mentertawakannya."] },
+                    { q: "Anda dilantik sebagai ketua kelas. Tiba-tiba keadaan di dalam kelas menjadi bising semasa ketiadaan guru. Apakah tindakan anda?", o: ["Menenangkan rakan-rakan dengan sopan dan mengingatkan mereka untuk menjaga ketenteraman kelas.", "Ikut membuat bising.", "Menjerit kepada rakan-rakan.", "Melaporkan kepada guru."] },
+                    { q: "Anda melihat seorang pelajar junior dibuli oleh sekumpulan pelajar senior. Apakah yang akan anda lakukan?", o: ["Melaporkan kejadian itu dengan segera kepada guru disiplin atau warden asrama untuk tindakan lanjut.", "Menonton sahaja.", "Menyertai pembuli.", "Berpura-pura tidak nampak."] },
+                    { q: "Rakan-rakan anda tidak berminat untuk mendengar ceramah yang diadakan di sekolah. Apakah tindakan anda?", o: ["Menasihati mereka dengan baik tentang manfaat ceramah tersebut dan menunjukkan contoh dengan mendengar secara tekun.", "Mengabaikan mereka.", "Turut serta tidak mendengar.", "Memarahi mereka."] },
+                    { q: "Anda bertemu dengan penjaga asrama buat kali pertama. Apakah yang patut anda lakukan?", o: ["Memperkenalkan diri dengan sopan, bersalaman, dan menunjukkan sikap hormat.", "Berjalan melepasinya.", "Menunggu ditegur.", "Menunjukkan muka sombong."] },
+                    { q: "Rakan yang anda kenali melalui media sosial mengajak anda untuk berjumpa secara bersendirian. Apakah respons anda?", o: ["Menolak ajakan itu dengan baik dan memaklumkan perkara tersebut kepada ibu bapa untuk tujuan keselamatan.", "Bersetuju tanpa berfikir panjang.", "Pergi bersama rakan tanpa memberitahu ibu bapa.", "Tidak membalas mesejnya."] },
+                    { q: "Anda diminta untuk bekerjasama dengan seorang rakan yang tidak anda sukai. Bagaimana anda mengendalikan situasi ini?", o: ["Bersikap profesional, mengetepikan perasaan peribadi, dan fokus untuk menyiapkan tugasan yang diberi dengan sebaik mungkin.", "Meminta tukar kumpulan.", "Melakukan semua kerja seorang diri.", "Tidak bekerjasama dengannya."] }
+                ],
+                SQ: [
+                    // Set 1 (Sedia Ada)
+                    { q: "Anda terjumpa sebuah dompet yang berisi wang di kantin. Apakah tindakan anda?", o: ["Menyerahkannya kepada guru atau pejabat sekolah", "Mengambil wang dan membuang dompet itu", "Menyimpannya dan menunggu jika ada yang mencari", "Bertanya kepada rakan-rakan siapa pemiliknya"] },
+                    { q: "Anda secara tidak sengaja memecahkan cermin tingkap makmal. Apakah yang anda lakukan?", o: ["Mengaku kesilapan, memohon maaf & bersedia bertanggungjawab", "Melarikan diri dan berharap tiada siapa yang nampak", "Menuduh orang lain yang melakukannya", "Membiarkan sahaja seolah-olah tiada apa yang berlaku"] },
+                    { q: "Rakan karib anda mengajak anda untuk meniru semasa peperiksaan. Apakah respons anda?", o: ["Menolak dengan tegas & menasihatinya", "Bersetuju kerana dia kawan baik saya", "Berpura-pura tidak mendengarnya", "Melaporkannya kepada pengawas peperiksaan"] },
+                    { q: "Anda melihat rakan anda membuang sampah merata-rata. Apakah tindakan anda?", o: ["Menegurnya dengan sopan", "Memarahinya di hadapan orang ramai", "Mengutip sampah itu tanpa berkata apa-apa", "Membiarkannya kerana itu bukan urusan saya"] },
+                    { q: "Anda diberi wang baki yang lebih selepas membeli barang di koperasi. Apakah yang anda akan lakukan?", o: ["Memulangkan semula wang yang lebih itu", "Menganggapnya sebagai rezeki dan menyimpannya", "Mendermakan wang itu ke tabung masjid", "Menggunakannya untuk membeli barang lain"] },
+                    { q: "Rakan anda mengajak anda ponteng kelas. Apakah tindakan anda?", o: ["Menolak dengan tegas & menasihatinya", "Ikut sahaja kerana takut kehilangan kawan", "Memberitahunya anda akan ikut tetapi tidak muncul", "Melaporkan rancangannya kepada guru kelas"] },
+                    { q: "Anda terdengar rakan merancang merosakkan harta benda sekolah. Apakah tindakan anda?", o: ["Melaporkan rancangan itu kepada guru disiplin", "Menyertai rancangan mereka", "Mendiamkan diri kerana takut", "Menasihati mereka secara berdepan"] },
+                    { q: "Semasa beratur, seorang pelajar memotong barisan di hadapan anda. Apakah reaksi anda?", o: ["Menegurnya dengan baik supaya beratur", "Menolak badannya ke belakang", "Membuat bising dan memanggil guru", "Membiarkannya dan berasa marah dalam hati"] },
+                    { q: "Anda diberi tanggungjawab menjaga wang tabung kelas. Apakah prinsip yang anda akan pegang?", o: ["Amanah, jujur, dan merekodkan setiap transaksi", "Menggunakan sedikit wang itu untuk kecemasan peribadi", "Meminta rakan lain untuk menyimpannya", "Menyimpan wang itu di tempat yang tidak selamat"] },
+                    { q: "Bendera Malaysia yang sedang dinaikkan terjatuh ke tanah. Apakah tindakan yang wajar dilakukan?", o: ["Mengambil, melipat dengan hormat & menyerahkannya kepada guru", "Membiarkannya di tanah", "Menyepaknya ke tepi", "Ketawa kerana kelucuan"] },
+                    // Set 2 (Baharu)
+                    { q: "Anda terjumpa sebuah dompet yang berisi wang di kantin sekolah. Apakah tindakan anda?", o: ["Menyerahkan dompet itu kepada guru bertugas atau pejabat sekolah dengan segera.", "Mengambil isinya dan meninggalkan dompet itu.", "Menyimpan dompet itu.", "Memberikannya kepada rakan."] },
+                    { q: "Semasa bermain bola, anda secara tidak sengaja memecahkan cermin tingkap makmal. Apakah yang anda lakukan?", o: ["Mengaku kesilapan, memohon maaf kepada guru yang bertanggungjawab, dan bersedia untuk menanggung akibatnya.", "Melarikan diri.", "Menyalahkan orang lain.", "Berpura-pura tidak tahu."] },
+                    { q: "Rakan karib anda mengajak anda untuk meniru semasa peperiksaan. Apakah respons anda?", o: ["Menolak ajakannya dengan tegas dan menasihatinya bahawa menipu adalah perbuatan yang salah dan tidak akan membawa kejayaan sebenar.", "Bersetuju untuk meniru.", "Membiarkan sahaja ajakannya.", "Melaporkan kepada guru."] },
+                    { q: "Anda melihat rakan anda membuang sampah di merata-rata tempat walaupun tong sampah berada berdekatan. Apakah tindakan anda?", o: ["Menegurnya dengan sopan dan mengingatkannya tentang tanggungjawab bersama untuk menjaga kebersihan persekitaran.", "Memarahinya.", "Membiarkannya.", "Mengikutinya membuang sampah."] },
+                    { q: "Anda diberi wang baki yang lebih selepas membeli barang di koperasi sekolah. Apakah yang anda akan lakukan?", o: ["Memulangkan semula wang yang lebih itu kepada penjaga koperasi dan memaklumkan tentang kesilapan tersebut.", "Menyimpan wang itu.", "Membelanjakan wang itu.", "Memberi kepada rakan."] },
+                    { q: "Rakan anda mengajak anda ponteng kelas untuk pergi ke pusat siber. Apakah tindakan anda?", o: ["Menolak ajakan tersebut dengan tegas dan menasihatinya tentang kepentingan pelajaran serta akibat buruk jika ponteng sekolah.", "Mengikut ajakannya.", "Memberitahu guru.", "Berjanji untuk pergi lain kali."] },
+                    { q: "Anda terdengar perbualan beberapa orang rakan yang merancang untuk merosakkan harta benda sekolah. Apakah tindakan anda?", o: ["Melaporkan rancangan tersebut kepada guru disiplin tanpa mendedahkan identiti anda untuk mengelakkan kejadian itu berlaku.", "Menyertai mereka.", "Mendiamkan diri.", "Menasihati mereka agar tidak melakukannya."] },
+                    { q: "Semasa beratur untuk mengambil makanan, seorang pelajar memotong barisan di hadapan anda. Apakah reaksi anda?", o: ["Menegurnya dengan baik dan memintanya untuk beratur mengikut giliran seperti orang lain.", "Memarahinya.", "Menolak pelajar itu.", "Membiarkannya."] },
+                    { q: "Anda diberi tanggungjawab untuk menjaga wang tabung kelas. Apakah prinsip yang anda akan pegang?", o: ["Bersikap amanah, jujur, dan merekodkan setiap wang yang masuk dan keluar dengan teliti.", "Menggunakan wang itu untuk kepentingan diri.", "Memberi pinjam kepada rakan.", "Menyimpan rekod secara sambil lewa."] },
+                    { q: "Bendera Malaysia yang sedang dinaikkan terjatuh ke tanah secara tidak sengaja. Apakah tindakan yang wajar dilakukan?", o: ["Mengambil bendera itu dengan segera, melipatnya dengan hormat, dan menyerahkannya kepada guru.", "Membiarkannya.", "Menendangnya ke tepi.", "Menyuruh orang lain mengambilnya."] }
+                ]
+            },
+            B: [
+                // Set 1 (Sedia Ada)
+                { q: "Siapakah Bapa Kemerdekaan Malaysia?", a: "Tunku Abdul Rahman Putra Al-Haj", o: ["Tun Abdul Razak", "Tun Hussein Onn", "Tun Dr. Mahathir Mohamad"] },
+                { q: "Apakah nama bunga kebangsaan Malaysia?", a: "Bunga Raya", o: ["Bunga Ros", "Bunga Orkid", "Bunga Matahari"] },
+                { q: "Bilakah tarikh Hari Malaysia disambut?", a: "16 September", o: ["31 Ogos", "1 Mei", "25 Disember"] },
+                { q: "Apakah ibu negeri bagi Sarawak?", a: "Kuching", o: ["Kota Kinabalu", "Miri", "Sibu"] },
+                { q: "Banjaran gunung yang terpanjang di Malaysia ialah...", a: "Banjaran Titiwangsa", o: ["Banjaran Crocker", "Banjaran Keledang", "Banjaran Bintang"] },
+                { q: "Apakah nama lapangan terbang antarabangsa utama di Malaysia?", a: "Lapangan Terbang Antarabangsa Kuala Lumpur - KLIA", o: ["Lapangan Terbang Subang", "Lapangan Terbang Bayan Lepas", "Lapangan Terbang Senai"] },
+                { q: "Adat Perpatih terkenal di negeri mana?", a: "Negeri Sembilan", o: ["Kelantan", "Melaka", "Pahang"] },
+                { q: "Tarian Zapin berasal dari negeri...", a: "Johor", o: ["Terengganu", "Perlis", "Kedah"] },
+                { q: "Apakah haiwan yang menjadi simbol pada Jata Negara Malaysia?", a: "Harimau", o: ["Gajah", "Singa", "Helang"] },
+                { q: "Siapakah angkasawan pertama Malaysia?", a: "Dato' Dr. Sheikh Muszaphar Shukor", o: ["Mejar Dr. Faiz Khaleed", "Dr. S. Vanajah", "Kapten Norazlan Aris"] },
+                { q: "Apakah proses yang membolehkan tumbuhan hijau membuat makanannya sendiri?", a: "Fotosintesis", o: ["Respirasi", "Transpirasi", "Penyejatan"] },
+                { q: "Planet yang manakah dikenali sebagai 'Planet Merah'?", a: "Marikh", o: ["Zuhrah", "Musytari", "Utarid"] },
+                { q: "Apakah unit asas bagi daya dalam Sistem Unit Antarabangsa (SI)?", a: "Newton", o: ["Joule", "Watt", "Pascal"] },
+                { q: "Siapakah pengasas syarikat Microsoft?", a: "Bill Gates", o: ["Steve Jobs", "Mark Zuckerberg", "Jeff Bezos"] },
+                { q: "Apakah fungsi utama CPU dalam sebuah komputer?", a: "Memproses arahan dan data", o: ["Menyimpan data secara kekal", "Memaparkan imej di skrin", "Menyambung ke internet"] },
+                { q: "Apakah nama mata wang rasmi negara Jepun?", a: "Yen", o: ["Won", "Yuan", "Ringgit"] },
+                { q: "Menara Eiffel terletak di negara mana?", a: "Perancis", o: ["Itali", "Sepanyol", "Jerman"] },
+                { q: "Sukan Olimpik diadakan setiap berapa tahun sekali?", a: "4 tahun", o: ["2 tahun", "5 tahun", "6 tahun"] },
+                { q: "Apakah gelaran yang diberikan kepada lagenda badminton negara, Datuk Lee Chong Wei?", a: "Datuk Wira", o: ["Jaguh Komanwel", "Raja Smash", "Pahlawan Negara"] },
+                { q: "Le Tour de Langkawi ialah acara sukan antarabangsa bagi sukan apa?", a: "Lumba basikal", o: ["Lumba lari", "Lumba kereta", "Renang"] },
+                { q: "Rukun Negara mempunyai berapa prinsip?", a: "5 prinsip", o: ["3 prinsip", "7 prinsip", "10 prinsip"] },
+                { q: "Apakah nama lautan terbesar di dunia?", a: "Lautan Pasifik", o: ["Lautan Atlantik", "Lautan Hindi", "Lautan Artik"] },
+                { q: "Siapakah yang melukis potret 'Mona Lisa'?", a: "Leonardo da Vinci", o: ["Vincent van Gogh", "Pablo Picasso", "Michelangelo"] },
+                { q: "Apakah nama sungai terpanjang di Semenanjung Malaysia?", a: "Sungai Pahang", o: ["Sungai Perak", "Sungai Kelantan", "Sungai Muar"] },
+                { q: "Apakah komponen utama dalam udara yang kita sedut untuk pernafasan?", a: "Oksigen", o: ["Nitrogen", "Karbon dioksida", "Hidrogen"] },
+                { q: "Apakah nama agensi PBB yang memperjuangkan hak kanak-kanak?", a: "UNICEF", o: ["UNESCO", "WHO", "IMF"] },
+                { q: "Apakah nama penuh bagi singkatan ASEAN?", a: "Association of Southeast Asian Nations", o: ["Asian Alliance of Nations", "Assembly of Southeast Asian Natives", "Asian Sports & Entertainment Network"] },
+                { q: "Siapakah pencipta telefon?", a: "Alexander Graham Bell", o: ["Thomas Edison", "Nikola Tesla", "Guglielmo Marconi"] },
+                { q: "Apakah nama tasik buatan manusia yang terbesar di Asia Tenggara?", a: "Tasik Kenyir", o: ["Tasik Chini", "Tasik Bera", "Empangan Bakun"] },
+                { q: "Apakah maksud warna biru pada bendera Jalur Gemilang?", a: "Perpaduan rakyat", o: ["Kesucian dan keluhuran", "Keberanian", "Kedaulatan Raja-raja Melayu"] },
+                { q: "Sebuah bas bertolak dari bandar A pada jam 8:30 pagi dan tiba di bandar B pada jam 1:15 petang. Berapakah tempoh masa perjalanan bas itu?", a: "4 jam 45 minit", o: ["4 jam 15 minit", "5 jam 15 minit", "3 jam 45 minit"] },
+                { q: "Harga sebuah baju ialah RM80. Jika diskaun sebanyak 20% diberikan, berapakah harga baju itu selepas diskaun?", a: "RM64", o: ["RM60", "RM72", "RM16"] },
+                { q: "3, 6, 12, 24, X. Apakah nilai X?", a: "48", o: ["36", "40", "60"] },
+                { q: "Dalam sebuah kelas, nisbah murid lelaki kepada murid perempuan ialah 2:3. Jika terdapat 12 orang murid lelaki, berapakah jumlah semua murid di dalam kelas itu?", a: "30 orang", o: ["18 orang", "24 orang", "36 orang"] },
+                { q: "Ali berlari lebih pantas daripada Badrul. Badrul berlari lebih perlahan daripada Chan. Chan pula berlari lebih pantas daripada Ali. Siapakah yang paling perlahan?", a: "Badrul", o: ["Ali", "Chan", "Tidak boleh ditentukan"] },
+                { q: "Jika 5 buah buku berharga RM60, berapakah harga bagi 8 buah buku yang sama?", a: "RM96", o: ["RM80", "RM100", "RM120"] },
+                { q: "Sebuah segi empat tepat mempunyai panjang 15 cm dan lebar 8 cm. Berapakah perimeternya?", a: "46 cm", o: ["23 cm", "120 cm", "60 cm"] },
+                { q: "Apakah nombor seterusnya dalam jujukan ini: 1, 4, 9, 16, 25, ...?", a: "36", o: ["30", "35", "49"] },
+                { q: "Umur Aiman adalah dua kali ganda umur adiknya. Jika jumlah umur mereka ialah 21 tahun, berapakah umur Aiman?", a: "14 tahun", o: ["7 tahun", "10 tahun", "15 tahun"] },
+                { q: "Sebuah kereta bergerak dengan kelajuan 90 km/j. Berapakah jarak yang dilaluinya dalam masa 2 jam 30 minit?", a: "225 km", o: ["180 km", "200 km", "250 km"] },
+                { q: "Jika hari ini adalah hari Rabu, apakah hari 10 hari dari sekarang?", a: "Sabtu", o: ["Jumaat", "Ahad", "Isnin"] },
+                { q: "Sebuah tangki air boleh diisi penuh oleh 3 paip dalam masa 2 jam. Berapa lamakah masa yang diambil jika hanya 2 paip digunakan?", a: "3 jam", o: ["2.5 jam", "4 jam", "1.5 jam"] },
+                { q: "Dalam sebuah kotak, 25% guli berwarna merah, 40% berwarna biru dan selebihnya berwarna hijau. Jika terdapat 70 biji guli hijau, berapakah jumlah semua guli di dalam kotak itu?", a: "200 biji", o: ["150 biji", "250 biji", "100 biji"] },
+                { q: "Semua murid pandai bermain catur. Azman ialah seorang murid. Apakah kesimpulan yang boleh dibuat?", a: "Azman pandai bermain catur", o: ["Azman tidak pandai bermain catur", "Semua yang pandai bermain catur ialah murid", "Tiada kesimpulan boleh dibuat"] },
+                { q: "Sebuah jam menunjukkan pukul 3:15. Berapakah sudut yang terbentuk antara jarum jam dan jarum minit?", a: "7.5 darjah", o: ["0 darjah", "15 darjah", "10 darjah"] },
+                { q: "0.75 × 400 = ?", a: "300", o: ["30", "3000", "75"] },
+                { q: "Purata bagi tiga nombor ialah 15. Jika dua daripada nombor itu ialah 10 dan 18, apakah nombor ketiga?", a: "17", o: ["15", "20", "13"] },
+                { q: "Seekor siput memanjat dinding setinggi 10 meter. Setiap hari ia naik 3 meter dan setiap malam ia turun 2 meter. Berapa harikah yang diperlukan untuk siput itu sampai ke puncak dinding?", a: "8 hari", o: ["7 hari", "9 hari", "10 hari"] },
+                { q: "Tukarkan 2.5 jam kepada minit.", a: "150 minit", o: ["125 minit", "180 minit", "120 minit"] },
+                { q: "Sebuah bulatan mempunyai jejari 7 cm. Kirakan luas bulatan tersebut. (Guna π = 22/7)", a: "154 cm²", o: ["44 cm²", "77 cm²", "308 cm²"] },
+                { q: "Apakah peribahasa yang sesuai untuk menggambarkan seseorang yang berusaha gigih?", a: "Genggam bara api biar sampai jadi arang", o: ["Seperti anjing dengan bayang-bayang", "Seperti katak di bawah tempurung", "Alang-alang mandi biar basah"] },
+                { q: "Pilih ayat yang betul dari segi tatabahasa.", a: "Baju yang baru dibeli oleh kakak itu sangat cantik.", o: ["Para-para guru sedang bermesyuarat.", "Setengah murid tidak hadir ke sekolah.", "Berbagai jenis kuih-muih dijual di pasar."] },
+                { q: "'Budiman' ialah simpulan bahasa yang bermaksud...", a: "Orang yang baik pekerti dan bijaksana", o: ["Orang yang kaya raya", "Orang yang suka membaca", "Orang yang kuat bekerja"] },
+                { q: "Apakah perkataan seerti (sinonim) bagi 'cekal'?", a: "Tabah", o: ["Lemah", "Malas", "Gembira"] },
+                { q: "Apakah perkataan berlawan (antonim) bagi 'hadir'?", a: "Ghaib", o: ["Datang", "Ada", "Masuk"] },
+                { q: "Ayat 'Diari itu saya sudah baca' boleh dipasifkan menjadi...", a: "Diari itu sudah saya baca.", o: ["Saya sudah dibaca oleh diari itu.", "Diari itu dibaca oleh saya.", "Baca oleh saya diari itu."] },
+                { q: "Pilih penjodoh bilangan yang paling sesuai untuk pisang.", a: "sesikat", o: ["seulas", "sebiji", "sekepal"] },
+                { q: "Choose the correct spelling.", a: "Necessary", o: ["Neccessary", "Necesary", "Neccesary"] },
+                { q: "The opposite of 'brave' is...", a: "Cowardly", o: ["Strong", "Bold", "Fear"] },
+                { q: "'A piece of cake' is an idiom that means...", a: "Something very easy to do", o: ["A delicious dessert", "A difficult task", "A type of pastry"] },
+                { q: "My mother _______ cooking in the kitchen now.", a: "is", o: ["are", "was", "were"] },
+                { q: "I bought a _______ of shoes yesterday.", a: "pair", o: ["pear", "pare", "peer"] },
+                { q: "Which of the following is a synonym for 'happy'?", a: "Joyful", o: ["Sad", "Angry", "Tired"] },
+                { q: "The cat is sleeping _______ the table.", a: "under", o: ["on", "in", "with"] },
+                { q: "He is the _______ boy in the class.", a: "tallest", o: ["tall", "taller", "more tall"] },
+                { q: "I have _______ apple and two oranges.", a: "an", o: ["a", "the", "-"] },
+                { q: "What is the past tense of the verb 'go'?", a: "Went", o: ["Gone", "Goed", "Going"] },
+                { q: "She went to the library _______ she wanted to borrow a book.", a: "because", o: ["but", "so", "or"] },
+                { q: "There isn't _______ milk left in the fridge.", a: "much", o: ["many", "a few", "some"] },
+                { q: "The children are playing _______ in the park.", a: "happily", o: ["happy", "happiness", "happier"] },
+                // Set 2 (Baharu) - Pengetahuan Am
+                { q: "Siapakah Bapa Kemerdekaan Malaysia?", a: "Tunku Abdul Rahman Putra Al-Haj", o: ["Tun Hussein Onn", "Tun Abdul Razak", "Dr. Mahathir Mohamad"] },
+                { q: "Apakah nama bunga kebangsaan Malaysia?", a: "Bunga Raya", o: ["Bunga Mawar", "Bunga Melur", "Bunga Kertas"] },
+                { q: "Bilakah tarikh Hari Malaysia disambut?", a: "16 September", o: ["31 Ogos", "1 Jun", "1 Mei"] },
+                { q: "Apakah ibu negeri bagi Sarawak?", a: "Kuching", o: ["Sibu", "Miri", "Bintulu"] },
+                { q: "Banjaran gunung yang terpanjang di Malaysia ialah...", a: "Banjaran Titiwangsa", o: ["Banjaran Crocker", "Banjaran Bintang", "Banjaran Keledang"] },
+                { q: "Apakah nama lapangan terbang antarabangsa utama di Malaysia?", a: "Lapangan Terbang Antarabangsa Kuala Lumpur (KLIA)", o: ["Lapangan Terbang Sultan Abdul Aziz Shah", "Lapangan Terbang Antarabangsa Pulau Pinang", "Lapangan Terbang Antarabangsa Langkawi"] },
+                { q: "Adat Perpatih terkenal di negeri mana?", a: "Negeri Sembilan", o: ["Melaka", "Johor", "Pahang"] },
+                { q: "Tarian Zapin berasal dari negeri...", a: "Johor", o: ["Kelantan", "Perak", "Selangor"] },
+                { q: "Apakah haiwan yang menjadi simbol pada Jata Negara Malaysia?", a: "Harimau", o: ["Singa", "Beruang", "Gajah"] },
+                { q: "Siapakah angkasawan pertama Malaysia?", a: "Dato' Dr. Sheikh Muszaphar Shukor", o: ["Dr. Faiz Khaleed", "S. Vanajah", "Mohd Harridon"] },
+                { q: "Apakah proses yang membolehkan tumbuhan hijau membuat makanannya sendiri?", a: "Fotosintesis", o: ["Respirasi", "Transpirasi", "Gutasi"] },
+                { q: "Planet yang manakah dikenali sebagai 'Planet Merah'?", a: "Marikh", o: ["Zuhrah", "Musytari", "Neptun"] },
+                { q: "Apakah unit asas bagi daya dalam Sistem Unit Antarabangsa (SI)?", a: "Newton", o: ["Joule", "Pascal", "Watt"] },
+                { q: "Siapakah pengasas syarikat Microsoft?", a: "Bill Gates", o: ["Steve Jobs", "Larry Page", "Mark Zuckerberg"] },
+                { q: "Apakah fungsi utama CPU dalam sebuah komputer?", a: "Memproses arahan dan data", o: ["Menyimpan fail", "Memaparkan grafik", "Menyambung ke internet"] },
+                { q: "Apakah nama mata wang rasmi negara Jepun?", a: "Yen", o: ["Yuan", "Won", "Baht"] },
+                { q: "Menara Eiffel terletak di negara mana?", a: "Perancis", o: ["Itali", "Jerman", "United Kingdom"] },
+                { q: "Sukan Olimpik diadakan setiap berapa tahun sekali?", a: "4 tahun", o: ["2 tahun", "3 tahun", "5 tahun"] },
+                { q: "Apakah gelaran yang diberikan kepada lagenda badminton negara, Datuk Lee Chong Wei?", a: "'Datuk Wira'", o: ["'Raja Gelek'", "'Raja Pecut'", "'Jaguh Dunia'"] },
+                { q: "Le Tour de Langkawi ialah acara sukan antarabangsa bagi sukan apa?", a: "Lumba basikal", o: ["Lumba kereta", "Lumba perahu", "Lumba lari"] },
+                { q: "Rukun Negara mempunyai berapa prinsip?", a: "5 prinsip", o: ["4 prinsip", "6 prinsip", "7 prinsip"] },
+                { q: "Apakah nama lautan terbesar di dunia?", a: "Lautan Pasifik", o: ["Lautan Atlantik", "Lautan Hindi", "Lautan Selatan"] },
+                { q: "Siapakah yang melukis potret 'Mona Lisa'?", a: "Leonardo da Vinci", o: ["Vincent Van Gogh", "Pablo Picasso", "Rembrandt"] },
+                { q: "Apakah nama sungai terpanjang di Semenanjung Malaysia?", a: "Sungai Pahang", o: ["Sungai Rajang", "Sungai Kinabatangan", "Sungai Perak"] },
+                { q: "Apakah komponen utama dalam udara yang kita sedut untuk pernafasan?", a: "Oksigen", o: ["Karbon Dioksida", "Nitrogen", "Hidrogen"] },
+                { q: "Apakah nama agensi di bawah Pertubuhan Bangsa-Bangsa Bersatu (PBB) yang memperjuangkan hak kanak-kanak?", a: "UNICEF", o: ["UNESCO", "WHO", "FAO"] },
+                { q: "Apakah nama penuh bagi singkatan ASEAN?", a: "Association of Southeast Asian Nations", o: ["Alliance of Southeast Asian Nations", "Assembly of Southeast Asian Nations", "Accord of Southeast Asian Nations"] },
+                { q: "Siapakah pencipta telefon?", a: "Alexander Graham Bell", o: ["Thomas Edison", "Nikola Tesla", "Albert Einstein"] },
+                { q: "Apakah nama tasik buatan manusia yang terbesar di Asia Tenggara?", a: "Tasik Kenyir", o: ["Tasik Toba", "Danau Tonle Sap", "Tasik Chini"] },
+                { q: "Apakah maksud warna biru pada bendera Jalur Gemilang?", a: "Perpaduan rakyat", o: ["Keberanian", "Kesucian", "Kedaulatan Raja"] },
+                // Set 2 (Baharu) - Penyelesaian Masalah
+                { q: "Sebuah bas bertolak dari bandar A pada jam 8:30 pagi dan tiba di bandar B pada jam 1:15 petang. Berapakah tempoh masa perjalanan bas itu?", a: "4 jam 45 minit", o: ["5 jam 15 minit", "4 jam 15 minit", "3 jam 45 minit"] },
+                { q: "Harga sebuah baju ialah RM80. Jika diskaun sebanyak 20% diberikan, berapakah harga baju itu selepas diskaun?", a: "RM64", o: ["RM70", "RM68", "RM60"] },
+                { q: "3, 6, 12, 24, X. Apakah nilai X?", a: "48", o: ["30", "36", "42"] },
+                { q: "Dalam sebuah kelas, nisbah murid lelaki kepada murid perempuan ialah 2:3. Jika terdapat 12 orang murid lelaki, berapakah jumlah semua murid di dalam kelas itu?", a: "30 orang", o: ["20 orang", "25 orang", "35 orang"] },
+                { q: "Ali berlari lebih pantas daripada Badrul. Badrul berlari lebih perlahan daripada Chan. Chan pula berlari lebih pantas daripada Ali. Siapakah yang paling perlahan?", a: "Badrul", o: ["Ali", "Chan", "Semua sama laju"] },
+                { q: "Jika 5 buah buku berharga RM60, berapakah harga bagi 8 buah buku yang sama?", a: "RM96", o: ["RM90", "RM100", "RM108"] },
+                { q: "Sebuah segi empat tepat mempunyai panjang 15 cm dan lebar 8 cm. Berapakah perimeternya?", a: "46 cm", o: ["30 cm", "38 cm", "120 cm"] },
+                { q: "Apakah nombor seterusnya dalam jujukan ini: 1, 4, 9, 16, 25, ...?", a: "36", o: ["32", "35", "40"] },
+                { q: "Umur Aiman adalah dua kali ganda umur adiknya. Jika jumlah umur mereka ialah 21 tahun, berapakah umur Aiman?", a: "14 tahun", o: ["12 tahun", "15 tahun", "16 tahun"] },
+                { q: "Sebuah kereta bergerak dengan kelajuan 90 km/j. Berapakah jarak yang dilaluinya dalam masa 2 jam 30 minit?", a: "225 km", o: ["200 km", "215 km", "230 km"] },
+                { q: "Jika hari ini adalah hari Rabu, apakah hari 10 hari dari sekarang?", a: "Sabtu", o: ["Khamis", "Jumaat", "Ahad"] },
+                { q: "Sebuah tangki air boleh diisi penuh oleh 3 paip dalam masa 2 jam. Berapa lamakah masa yang diambil jika hanya 2 paip digunakan?", a: "3 jam", o: ["2.5 jam", "3.5 jam", "4 jam"] },
+                { q: "Dalam sebuah kotak, 25% guli berwarna merah, 40% berwarna biru dan selebihnya berwarna hijau. Jika terdapat 70 biji guli hijau, berapakah jumlah semua guli di dalam kotak itu?", a: "200 biji", o: ["180 biji", "220 biji", "250 biji"] },
+                { q: "Semua murid pandai bermain catur. Azman ialah seorang murid. Apakah kesimpulan yang boleh dibuat?", a: "Azman pandai bermain catur", o: ["Azman mungkin tidak pandai bermain catur", "Tidak semua murid pandai bermain catur", "Azman bukan seorang murid"] },
+                { q: "Sebuah jam menunjukkan pukul 3:15. Berapakah sudut yang terbentuk antara jarum jam dan jarum minit?", a: "7.5 darjah", o: ["0 darjah", "10 darjah", "15 darjah"] },
+                { q: "0.75 × 400 = ?", a: "300", o: ["250", "350", "400"] },
+                { q: "Purata bagi tiga nombor ialah 15. Jika dua daripada nombor itu ialah 10 dan 18, apakah nombor ketiga?", a: "17", o: ["14", "15", "16"] },
+                { q: "Seekor siput memanjat dinding setinggi 10 meter. Setiap hari ia naik 3 meter dan setiap malam ia turun 2 meter. Berapa harikah yang diperlukan untuk siput itu sampai ke puncak dinding?", a: "8 hari", o: ["7 hari", "9 hari", "10 hari"] },
+                { q: "Tukarkan 2.5 jam kepada minit.", a: "150 minit", o: ["120 minit", "135 minit", "160 minit"] },
+                { q: "Sebuah bulatan mempunyai jejari 7 cm. Kirakan luas bulatan tersebut. (Guna π=22/7)", a: "154 cm²", o: ["144 cm²", "164 cm²", "174 cm²"] },
+                // Set 2 (Baharu) - Bahasa Melayu
+                { q: "Apakah peribahasa yang sesuai untuk menggambarkan seseorang yang berusaha gigih?", a: "Bagai lebah menghimpun madu", o: ["Seperti anjing dengan bayang-bayang", "Air dicincang tidak akan putus", "Bagai aur dengan tebing"] },
+                { q: "Pilih ayat yang betul dari segi tatabahasa.", a: "Baju yang baru dibeli oleh kakak itu sangat cantik.", o: ["Para-para guru sedang bermesyuarat di bilik guru.", "Setengah murid tidak hadir ke sekolah hari ini.", "Berbagai jenis kuih-muih dijual di pasar malam itu."] },
+                { q: "'Budiman' ialah simpulan bahasa yang bermaksud...", a: "Orang yang baik pekerti dan bijaksana", o: ["Orang yang kaya", "Orang yang pemurah", "Orang yang pandai"] },
+                { q: "Apakah perkataan seerti (sinonim) bagi cekal?", a: "Tabah", o: ["Takut", "Risau", "Sedih"] },
+                { q: "Apakah perkataan berlawan (antonim) bagi hadir?", a: "Ghaib", o: ["Ada", "Datang", "Muncul"] },
+                { q: "Ayat Diari itu saya sudah baca semalam boleh dipasifkan menjadi...", a: "Diari itu sudah saya baca semalam.", o: ["Diari itu dibaca oleh saya semalam.", "Semalam saya sudah baca diari itu.", "Saya sudah membaca diari itu semalam."] },
+                { q: "Pilih penjodoh bilangan yang paling sesuai untuk pisang.", a: "sesikat", o: ["sebiji", "sebatang", "seberkas"] },
+                // Set 2 (Baharu) - Bahasa Inggeris
+                { q: "Choose the correct spelling.", a: "Necessary", o: ["Neccessary", "Necesary", "Neccesary"] },
+                { q: "The opposite of brave is...", a: "Cowardly", o: ["Afraid", "Scared", "Timid"] },
+                { q: "'A piece of cake' is an idiom that means...", a: "Something very easy to do", o: ["A difficult task", "A sweet food", "A big problem"] },
+                { q: "My mother _______ cooking in the kitchen now.", a: "is", o: ["are", "am", "be"] },
+                { q: "I bought a _______ of shoes yesterday.", a: "pair", o: ["pear", "pare", "peer"] },
+                { q: "Which of the following is a synonym for happy?", a: "Joyful", o: ["Sad", "Angry", "Bored"] },
+                { q: "The cat is sleeping _______ the table.", a: "under", o: ["on", "in", "at"] },
+                { q: "He is the _______ boy in the class.", a: "tallest", o: ["tall", "taller", "most tall"] },
+                { q: "I have _______ apple and two oranges.", a: "an", o: ["a", "the", "some"] },
+                { q: "What is the past tense of the verb go?", a: "Went", o: ["Gone", "Goed", "Going"] },
+                { q: "She went to the library _______ she wanted to borrow a book.", a: "because", o: ["so", "but", "although"] },
+                { q: "There isn't _______ milk left in the fridge.", a: "much", o: ["many", "a lot of", "few"] },
+                { q: "The children are playing _______ in the park.", a: "happily", o: ["happy", "happiness", "happier"] }
+            ]
+        };
+
+        // --- DOM Elements --- //
+        const nameScreen = document.getElementById('name-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        
+        const nameInput = document.getElementById('name-input');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        const sectionTitle = document.getElementById('section-title');
+        const pageCounter = document.getElementById('page-counter');
+        const timerEl = document.getElementById('timer');
+        const timeEl = document.getElementById('time');
+        
+        const indicatorContainer = document.getElementById('indicator-container');
+        const questionsPageContainer = document.getElementById('questions-page-container');
+        const paginationContainer = document.getElementById('pagination-container');
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        const nextPageBtn = document.getElementById('next-page-btn');
+        const finishSectionBtn = document.getElementById('finish-section-btn');
+
+        const resultName = document.getElementById('result-name');
+        const resultAFeedback = document.getElementById('result-a-feedback');
+        const resultBScore = document.getElementById('result-b-score');
+
+        // --- State --- //
+        let userName = '';
+        let currentSection = 'A';
+        let selectedQuestions = [];
+        let userAnswers = {};
+        let currentPage = 0;
+        let questionsPerPage = 10;
+        let timerInterval;
+
+        // --- Helper Functions --- //
+        const shuffleArray = (array) => {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        };
+
+        // --- Core Functions --- //
+        function prepareQuestions() {
+            // Prepare Section A
+            const allPartA = [...questionBank.A.EQ, ...questionBank.A.SSQ, ...questionBank.A.SQ];
+            const shuffledA = shuffleArray(allPartA);
+            const finalQuestionsA = shuffledA.slice(0, 30).map(q => ({
+                question: q.q,
+                options: shuffleArray([...q.o]) 
+            }));
+
+            // Prepare Section B
+            const shuffledB = shuffleArray([...questionBank.B]);
+            const finalQuestionsB = shuffledB.slice(0, 70).map(q => ({
+                question: q.q,
+                answer: q.a,
+                options: shuffleArray([q.a, ...q.o])
+            }));
+            
+            return { A: finalQuestionsA, B: finalQuestionsB };
+        }
+
+        function startTest() {
+            userName = nameInput.value.toUpperCase();
+            if (!userName) return;
+
+            const allQuestions = prepareQuestions();
+            selectedQuestions = allQuestions[currentSection];
+            userAnswers = {};
+
+            nameScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+
+            displayPage(0);
+        }
+        
+        function displayPage(pageIndex) {
+            currentPage = pageIndex;
+            questionsPageContainer.innerHTML = '';
+            
+            const numQuestions = selectedQuestions.length;
+            const totalPages = Math.ceil(numQuestions / questionsPerPage);
+            const startIndex = currentPage * questionsPerPage;
+            const endIndex = Math.min(startIndex + questionsPerPage, numQuestions);
+
+            sectionTitle.textContent = `Bahagian ${currentSection}: ${currentSection === 'A' ? 'Kecerdasan Insaniah' : 'Kecerdasan Intelek'}`;
+            pageCounter.textContent = `Halaman ${currentPage + 1} daripada ${totalPages}`;
+
+            for (let i = startIndex; i < endIndex; i++) {
+                renderQuestion(i);
+            }
+
+            renderIndicators();
+            updatePaginationButtons();
+        }
+
+        function renderQuestion(index) {
+            const questionData = selectedQuestions[index];
+            const questionWrapper = document.createElement('div');
+            questionWrapper.className = 'question-block';
+            questionWrapper.id = `q-wrapper-${index}`;
+
+            const qText = document.createElement('p');
+            qText.className = 'text-lg font-medium mb-4';
+            qText.textContent = `${index + 1}. ${questionData.question}`;
+            questionWrapper.appendChild(qText);
+
+            const optionsWrapper = document.createElement('div');
+            optionsWrapper.className = 'flex flex-col space-y-3';
+            
+            questionData.options.forEach(option => {
+                const label = document.createElement('label');
+                label.className = 'option-label p-3 border-2 border-gray-300 rounded-lg flex items-center cursor-pointer hover:bg-blue-100 hover:border-blue-400';
+                if (userAnswers[index] === option) {
+                    label.classList.add('selected');
+                }
+                
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = `q_options_${index}`;
+                radio.value = option;
+                // Tailwind CSS v3 has accent-color support, using custom style for broader compatibility
+                radio.className = 'w-5 h-5 mr-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500';
+                radio.style.accentColor = '#2563eb';
+                
+                if (userAnswers[index] === option) {
+                    radio.checked = true;
+                }
+
+                // Clicking label triggers selection logic
+                label.onclick = () => selectAnswer(index, option);
+
+                const span = document.createElement('span');
+                span.textContent = option;
+                
+                label.appendChild(radio);
+                label.appendChild(span);
+                optionsWrapper.appendChild(label);
+            });
+
+            questionWrapper.appendChild(optionsWrapper);
+            questionsPageContainer.appendChild(questionWrapper);
+        }
+
+        function selectAnswer(index, option) {
+            userAnswers[index] = option;
+            
+            // Update the visual state of the labels for the current question
+            const questionWrapper = document.getElementById(`q-wrapper-${index}`);
+            const labels = questionWrapper.querySelectorAll('label.option-label');
+            
+            labels.forEach(labelNode => {
+                const radio = labelNode.querySelector('input[type="radio"]');
+                if (radio.value === option) {
+                    labelNode.classList.add('selected');
+                    radio.checked = true;
+                } else {
+                    labelNode.classList.remove('selected');
+                }
+            });
+
+            // Update indicator
+            const indicator = document.getElementById(`indicator-${index}`);
+            if (indicator) {
+                indicator.classList.add('answered');
+            }
+        }
+        
+        function renderIndicators() {
+            indicatorContainer.innerHTML = '';
+            const numQuestions = selectedQuestions.length;
+
+            for (let i = 0; i < numQuestions; i++) {
+                const indicator = document.createElement('button');
+                indicator.textContent = i + 1;
+                indicator.id = `indicator-${i}`;
+                indicator.className = 'indicator-btn size-8 md:size-9 flex items-center justify-center border-2 rounded-md text-sm font-medium';
+                if (userAnswers[i]) {
+                    indicator.classList.add('answered');
+                }
+                indicator.onclick = () => {
+                    const targetPage = Math.floor(i / questionsPerPage);
+                    displayPage(targetPage);
+                };
+                indicatorContainer.appendChild(indicator);
+            }
+        }
+        
+        function updatePaginationButtons() {
+            const totalPages = Math.ceil(selectedQuestions.length / questionsPerPage);
+            prevPageBtn.disabled = currentPage === 0;
+            prevPageBtn.classList.toggle('opacity-50', currentPage === 0);
+
+            nextPageBtn.disabled = currentPage === totalPages - 1;
+            nextPageBtn.classList.toggle('opacity-50', currentPage === totalPages - 1);
+            nextPageBtn.classList.toggle('hidden', currentPage === totalPages - 1);
+
+            finishSectionBtn.classList.toggle('hidden', currentPage !== totalPages - 1);
+        }
+
+        function startNextSection() {
+            if (currentSection === 'A') {
+                // Terus beralih ke Bahagian B tanpa pengesahan
+                currentSection = 'B';
+                startTest(); // Memulakan semula ujian untuk soalan Bahagian B
+                timerEl.classList.remove('hidden');
+                startTimer(90 * 60);
+            } else {
+                // Terus tunjukkan keputusan untuk Bahagian B
+                showResult();
+            }
+        }
+        
+        function startTimer(duration) {
+            let timeLeft = duration;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timeEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Masa telah tamat!");
+                    showResult();
+                }
+            }, 1000);
+        }
+        
+        function showResult() {
+            clearInterval(timerInterval);
+
+            // Calculate score for part B
+            let scoreB = 0;
+            if(selectedQuestions.length > 0 && selectedQuestions[0].answer) { // Ensure it is section B
+                selectedQuestions.forEach((q, index) => {
+                    if (userAnswers[index] === q.answer) {
+                        scoreB++;
+                    }
+                });
+            }
+
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            
+            resultName.textContent = userName;
+            resultBScore.textContent = `${scoreB} / 70`;
+        }
+
+        function restartTest() {
+            location.reload();
+        }
+
+        // --- Event Listeners --- //
+        nameInput.addEventListener('keyup', (e) => {
+            startBtn.disabled = e.target.value.trim().length === 0;
+        });
+
+        startBtn.addEventListener('click', () => {
+            currentSection = 'A';
+            startTest();
+        });
+
+        restartBtn.addEventListener('click', restartTest);
+        
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 0) {
+                displayPage(currentPage - 1);
+            }
+        });
+
+        nextPageBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(selectedQuestions.length / questionsPerPage);
+            if (currentPage < totalPages - 1) {
+                displayPage(currentPage + 1);
+            }
+        });
+        
+        finishSectionBtn.addEventListener('click', startNextSection);
+        
+    </script>
+</body>
+</html>
+
+
+
+
